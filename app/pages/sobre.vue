@@ -1,9 +1,11 @@
 <template>
-  <div class="about container">
-    <h1>Sobre Mística RPG</h1>
-    <div class="content-box">
-      <p>Mística RPG é um projeto criado para explorar os limites da imaginação em um mundo de fantasia e aventura.</p>
-      <p>Este painel de 'Sobre' demonstra como os estilos globais são aplicados automaticamente. A fonte do título, do parágrafo, as cores e o espaçamento vêm diretamente do nosso arquivo <strong>main.css</strong>, sem que precisemos importar nada aqui!</p>
+  <div>
+    <div class="about container">
+      <h1>Sobre Mística RPG</h1>
+      <div class="content-box">
+        <p>Mística RPG é um projeto criado para explorar os limites da imaginação em um mundo de fantasia e aventura.</p>
+        <p>Este painel de 'Sobre' demonstra como os estilos globais são aplicados automaticamente. A fonte do título, do parágrafo, as cores e o espaçamento vêm diretamente do nosso arquivo <strong>main.css</strong>, sem que precisemos importar nada aqui!</p>
+      </div>
     </div>
   </div>
 </template>

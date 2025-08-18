@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import apiClient from '@/services/api'; // Importando nosso serviço de API configurado
+import apiClient from '~/services/api'; // Importando nosso serviço de API configurado
 
 // Definindo um "tipo" para o nosso personagem, para o TypeScript nos ajudar
 interface Personagem {
@@ -33,26 +33,28 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="personagens container">
-    <h1>Personagens de Mística RPG</h1>
+  <div>
+    <div class="personagens container">
+      <h1>Personagens de Mística RPG</h1>
 
-    <div v-if="loading">
-      <p>Carregando aventureiros...</p>
-    </div>
+      <div v-if="loading">
+        <p>Carregando aventureiros...</p>
+      </div>
 
-    <div v-if="error" class="error-message">
-      <p>{{ error }}</p>
-    </div>
+      <div v-if="error" class="error-message">
+        <p>{{ error }}</p>
+      </div>
 
-    <div v-if="!loading && !error">
-      <ul v-if="personagens.length > 0" class="personagens-lista">
-        <li v-for="personagem in personagens" :key="personagem.id" class="personagem-card">
-          <h2>{{ personagem.nome }}</h2>
-          <p><span>Classe:</span> {{ personagem.classe }}</p>
-          <p><span>Nível:</span> {{ personagem.nivel }}</p>
-        </li>
-      </ul>
-      <p v-else>Nenhum personagem encontrado. Use o DBeaver ou o Tinker para criar um!</p>
+      <div v-if="!loading && !error">
+        <ul v-if="personagens.length > 0" class="personagens-lista">
+          <li v-for="personagem in personagens" :key="personagem.id" class="personagem-card">
+            <h2>{{ personagem.nome }}</h2>
+            <p><span>Classe:</span> {{ personagem.classe }}</p>
+            <p><span>Nível:</span> {{ personagem.nivel }}</p>
+          </li>
+        </ul>
+        <p v-else>Nenhum personagem encontrado. Use o DBeaver ou o Tinker para criar um!</p>
+      </div>
     </div>
   </div>
 </template>

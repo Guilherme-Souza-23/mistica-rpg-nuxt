@@ -2,7 +2,7 @@
   <div>
     <header class="container">
       <nav>
-        <NuxtLink to="/">Início</NuxtLink>
+        <NuxtLink to="/index">Início</NuxtLink>
         <NuxtLink to="/sobre">Sobre</NuxtLink>
         <NuxtLink to="/personagens">Personagens</NuxtLink>
         <NuxtLink to="/recompensas">Recompensas</NuxtLink>
