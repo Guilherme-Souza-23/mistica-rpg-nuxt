@@ -16,5 +16,15 @@ export default defineNuxtConfig({
   ],
   modules: [
     '@nuxtjs/tailwindcss' 
-  ]
+  ],
+
+  vite: {
+    server: {
+      watch: {
+        // Esta configuração pode ajudar a estabilizar o HMR em alguns sistemas
+        usePolling: true,
+        interval: 100,
+      }
+    }
+  }
 })
