@@ -4,7 +4,7 @@
       <nav>
         <NuxtLink to="/index">Início</NuxtLink>
         <NuxtLink to="/sobre">Sobre</NuxtLink>
-        <NuxtLink to="/personagens">Personagens</NuxtLink>
+        <NuxtLink to="/personagens/1">Personagens</NuxtLink>
         <NuxtLink to="/recompensas">Recompensas</NuxtLink>
       </nav>
     </header>
