@@ -111,7 +111,7 @@
             </div>
           </div>
         </div>
-        
+        <!--
         <div class="stat-box col-span-1">
             <h3 class="text-xl font-bold mb-2">Inventário</h3>
             <ul v-if="personagem.inventario_itens && personagem.inventario_itens.length > 0" class="inventory-list">
@@ -122,6 +122,7 @@
             </ul>
             <p v-else class="text-sm italic">Inventário vazio.</p>
         </div>
+        -->
       </div>
     </div>
   </div>
@@ -150,7 +151,7 @@
     };
 
     // O método reduce transforma o array de perícias em um objeto agrupado
-    return personagem.value.pericias.reduce((acc, itemPericia) => {
+    return personagem.value.pericias.reduce((acc: { [key: string]: any }, itemPericia) => {
       const atributoNomeExibicao = itemPericia.pericia.atributo_base;
       const atributoChave = slugify(atributoNomeExibicao);
       const periciaInfo = {
@@ -179,7 +180,7 @@
   onMounted(async () => {
     try {
       const personagemId = route.params.id;
-      personagem.value = await useApi(`/personagens/${personagemId}`);
+      personagem.value = await useApi(`/personagens/buscar/${personagemId}`);
     } catch (err: any) {
       error.value = err.message || 'Falha ao carregar o personagem.';
     } finally {

@@ -6,6 +6,7 @@
         <NuxtLink to="/sobre">Sobre</NuxtLink>
         <NuxtLink to="/personagens/1">Personagens</NuxtLink>
         <NuxtLink to="/recompensas">Recompensas</NuxtLink>
+        <NuxtLink to="/personagens/criar/etapa1">Novo Personagem</NuxtLink>
       </nav>
     </header>
 
