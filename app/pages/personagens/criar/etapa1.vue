@@ -3,12 +3,13 @@
     <h1 class="text-4xl font-bold mb-6">Criar Novo Personagem</h1>
 
     <div v-if="loading">Carregando opções...</div>
+  <div v-else-if="error">{{ error.message }}</div>
 
     <div v-else class="bg-white p-6 rounded-lg shadow-lg">
       <h2 class="text-2xl font-bold mb-4 border-b pb-2">Etapa 1: Identidade</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+      <div class="grid grid-cols-4 md:grid-cols-2 gap-6 mt-4">
         
-        <div>
+        <div class="row-span-2">
           <div class="mb-4">
             <label for="nome" class="block font-bold mb-1">Nome do Personagem</label>
             <input type="text" v-model="store.personagem.nome" id="nome" class="w-full p-2 border rounded">
@@ -36,9 +37,16 @@
           </div>
         </div>
 
-        <div v-if="bonusSubRaca" class="bg-gray-50 p-4 rounded-lg border h-full">
-          <h4 class="font-bold mb-2">Bônus da Sub-raça</h4>
-          <ul class="list-disc list-inside text-sm space-y-1">
+        <div class=" bg-gray-50 p-4 rounded-lg border h-[150px]">
+          <h4 class="font-bold mb-2">Descrição da Classe</h4>
+          <div v-if="store.opcoes.classes">
+            {{ store.opcoes.classes.find(c => c.id == store.personagem.classe_id)?.descricao }}
+          </div>
+        </div>
+
+        <div class=" bg-gray-50 p-4 rounded-lg border h-[200px]">
+          <h4 class="font-bold mb-2">Bônus de Raça</h4>
+          <ul v-if="bonusSubRaca" class="list-disc list-inside text-sm space-y-1">
             <div v-for="(mod, index) in bonusSubRaca" :key="index">
               <li v-if="mod.tipo == 'bonus_atributo'">
                 {{ mod.descricao || `Bônus de atributo: ${mod.valor} em ${mod.chave}` }}
@@ -63,8 +71,8 @@
         </div>
       </div>      
       <div class="flex justify-end mt-6">
-        <NuxtLink to="/personagens/criar/etapa2">
-          <button type="button" :disabled="!store.isEtapa1Valida" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-gray-400">
+        <NuxtLink to="/personagens/criar/etapa2" >
+          <button @click="clicou()"  type="button" :disabled="!store.isEtapa1Valida" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-gray-400">
             Próximo
           </button>
         </NuxtLink>
@@ -79,13 +87,18 @@ import { useCriacaoPersonagemStore } from '~/stores/criacaoPersonagem';
 
 const store = useCriacaoPersonagemStore();
 const loading = ref(true);
+const error = ref<Error | null>(null);
 
 onMounted(async () => {
-  // Se as opções ainda não foram carregadas, busca na API
-  if (store.opcoes.racas.length === 0) {
-    await store.buscarOpcoesIniciais();
+   try {
+    if (store.opcoes.racas.length === 0) {
+      await store.buscarOpcoesIniciais();
+    }
+  } catch (err: any) {
+    error.value = err instanceof Error ? err : new Error('Falha ao buscar opções iniciais.');
+  } finally {
+    loading.value = false;
   }
-  loading.value = false;
 });
 
 const bonusSubRaca = computed(() => {
@@ -101,7 +114,7 @@ const bonusSubRaca = computed(() => {
   }
 
   // Encontra a sub-raça dentro da raça principal
-  const subraca = racaPrincipal.sub_racas.find(sr => sr.id === store.personagem.raca_id);
+  const subraca = racaPrincipal?.sub_racas?.find(sr => sr.id === store.personagem.raca_id);
   if (subraca && subraca.modificadores && subraca.modificadores.length > 0) {
     if (subraca.nome == "Humano (Especialista)") {
       return [
@@ -119,10 +132,15 @@ const bonusSubRaca = computed(() => {
     
   }
 
-  console.log("subraca", subraca);
+  
+
 
   // Retorna os modificadores da sub-raça encontrada
   return subraca ? subraca.modificadores : null;
 });
+
+function clicou() {
+  //store.imprimeTudo();
+}
 
 </script>

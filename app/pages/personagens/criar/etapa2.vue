@@ -142,7 +142,7 @@
               class="flex items-center space-x-2 mb-2"
             >
               <label class="cursor-pointer">
-                <strong>{{ hab.habilidade.nome }}</strong>: {{ hab.habilidade.descricao }}
+                <strong>{{ hab.nome }}</strong>: {{ hab.descricao }}
               </label>
             </li>
           </ul>
@@ -159,16 +159,16 @@
               <select
                 v-model="habilidadeSelecionadaLocal"
                 @change="selecionarHabilidade(
-                  habilidades.ativas.find(h => h.habilidade.nome === habilidadeSelecionadaLocal)
+                  habilidades.ativas.find(h => h.nome === habilidadeSelecionadaLocal)
                 )"
                 class="border rounded p-2 w-full"
               >
                 <option
                   v-for="hab in habilidades.ativas"
                   :key="hab.id"
-                  :value="hab.habilidade.nome"
+                  :value="hab.nome"
                 >
-                  {{ hab.habilidade.nome }}
+                  {{ hab.nome }}
                 </option>
               </select>
             </div>
@@ -176,8 +176,8 @@
             <!-- Coluna 2: Descrição -->
             <div class="border rounded p-4 bg-gray-50">
               <p v-if="store.habilidadeSelecionada">
-                <strong>{{ store.habilidadeSelecionada.habilidade.nome }}</strong><br />
-                {{ store.habilidadeSelecionada.habilidade.descricao }}
+                <strong>{{ store.habilidadeSelecionada.nome }}</strong><br />
+                {{ store.habilidadeSelecionada.descricao }}
               </p>
               <p v-else class="text-gray-500 italic">
                 Selecione uma habilidade para ver a descrição
@@ -201,6 +201,7 @@
         <NuxtLink to="/personagens/criar/etapa3">
           <button
             type="button"
+            @click = "clicou()"
             :disabled="!store.isEtapa2Valida"
             class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-gray-400"
           >
@@ -224,21 +225,27 @@ const habilidadeSelecionadaLocal = ref<any>(null);
 const { personagem, proficiencias, habilidades } = storeToRefs(store);
 
 
+
+
+
 watch(() => personagem.value.classe_id, (newClasseId) => {
   if (newClasseId) {
     store.carregarDadosClasse(newClasseId);
   }
 });
 
+function clicou() {
+  store.imprimeTudo();
+}
+
 // onMounted: Carrega os dados da classe quando a página é montada
-onMounted(() => {
+onMounted(async () => {
   if (personagem.value.classe_id) {
     store.carregarDadosClasse(personagem.value.classe_id);
   }
   if (store.habilidadeSelecionada) {
     habilidadeSelecionadaLocal.value = store.habilidadeSelecionada;
   }
-  console.log("Habilidades Passivas:", habilidades.value);
 
 });
 

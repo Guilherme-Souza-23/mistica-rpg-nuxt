@@ -51,7 +51,7 @@
                               v-model.number="(store.personagem.pericias as any)[attr.nome][pericia.nome]"
                             />
                           </td>
-                          <td class="text-center">{{ ((store.personagem.pericias as any)[attr.nome][pericia.nome] || 0) - 10 }}</td>
+                          <td class="text-center">{{ ((store.personagem.pericias?.[attr.nome]?.[pericia.nome]) || 0) - 10 }}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -290,20 +290,25 @@ function mapearPropriedades(arma: any) {
 onMounted(async () => {
   // Se usuário recarregar direto a etapa 3
   if (store.opcoes.pericias.length === 0) {
-    await store.buscarOpcoesIniciais()
+    await store.buscarOpcoesIniciais();
+  }
+
+  if(store.personagem.classe_id){
+    await store.buscaPreviaPersonagem();
   }
 
   // Buscar equipamentos iniciais por classe
   if (store.personagem.classe_id) {
-    resposta.value = await useApi(`/recursos/equipamentosIniciais/${store.personagem.classe_id}`);
+    const resposta: any = await useApi(`/classes/equipamentosIniciais/${store.personagem.classe_id}`);
     // Assumindo que a API retorna algo como { armas: [...], armaduras: [...] }
-    for(let i = 0; i < resposta.value.length; i++){
-      if(resposta.value[i].grupo_escolha == 1){
-        armas1.value.push(resposta.value[i]);
-      }else if(resposta.value[i].grupo_escolha == 2){
-        armas2.value.push(resposta.value[i]);
-      }else if(resposta.value[i].grupo_escolha == 3){
-        armaduras.value.push(resposta.value[i]);
+
+    for (const item of resposta.value) {
+      if (item.grupo_escolha === 1) {
+        armas1.value.push(item);
+      } else if (item.grupo_escolha === 2) {
+        armas2.value.push(item);
+      } else if (item.grupo_escolha === 3) {
+        armaduras.value.push(item);
       }
     }
   }
@@ -334,7 +339,7 @@ const secundarios = computed(() => {
   const atributosSecundarios: { label: string; value: any }[] = [];
 
   // Esquiva = máx(Reagir, 10)
-  const reagir = getValorPericia('Destreza', 'Reagir') - 10;
+  const reagir = (getValorPericia('Destreza', 'Reagir') || 0) - 10;
   const penalidadeEsquiva = armadura.value?.item_base?.propriedades_armadura?.furtividade_resistencia ?? 0;
   const esquivaBase = (10 + reagir);
 

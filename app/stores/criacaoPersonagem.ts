@@ -29,21 +29,23 @@ interface RacaPrincipal {
 interface Classe {
   id: number
   nome: string
+  descricao: string
+  vida_base: number
+}
+interface AtributoBase {
+  id: number
+  nome: string
 }
 interface Pericia {
   id: number
   nome: string
-  atributo_base: string
+  atributo_base_id: number
 }
 interface Habilidade {
   id: number
   nome: string
-  habilidade: {
-    tipo: 'ativa' | 'passiva',
-    id: number,
-    nome: string,
-    descricao: string,
-  }
+  tipo: 'ativa' | 'passiva',
+  descricao: string,
   nivel_adquirido: number
 }
 
@@ -76,6 +78,7 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
       pericias: {} as Record<string, Record<string, number>>,
       escolhas_raciais: {} as Record<string, string>,
       habilidades_ativas: {} as Record<number, number>, // <nivel, id da habilidade>
+      habilidades_passivas: {} as Record<number, number>,
       personagemCriadoId: null as number | null,
       nivel: 1,
     },
@@ -83,9 +86,11 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
       racas: [] as RacaPrincipal[],
       classes: [] as Classe[],
       pericias: [] as Pericia[],
+      atributos_base: [] as AtributoBase[],
     },
     racaPrincipalSelecionadaId: null as number | null,
     proficiencias: [] as Proficiencia[],
+    classe: [] as Classe[],
 
     habilidades: {
       passivas: [] as Habilidade[],
@@ -115,11 +120,11 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
       const gruposEscolhidos = Object.keys(state.personagem.escolhas_raciais).length
 
       // Habilidades ativas: todas as que possuem opções devem ter uma escolhida
-      const habilidadesOk = this.habilidades.ativas.every(
-        grupo => !!state.personagem.habilidades_ativas[grupo[0].nivel],
-      )
+      if(!this.habilidadeSelecionada){
+        return false;
+      }
 
-      return pontosOk && gruposNecessarios === gruposEscolhidos && habilidadesOk
+      return pontosOk && gruposNecessarios === gruposEscolhidos
     },
 
     isEtapa3Valida(state): boolean {
@@ -211,12 +216,12 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
         state.personagem.destreza +
         state.personagem.constituicao +
         state.personagem.inteligencia +
-        state.personagem.carisma
+        state.personagem.carisma;
 
       // Sorte é especial → cada ponto custa 10
-      const custoSorte = state.personagem.sorte * 10
+      const custoSorte = state.personagem.sorte * 10;
 
-      return 200 - gastosBase - custoSorte
+      return 200 - gastosBase - custoSorte;
     },
 
     atributosFinais(state): Record<string, number> {
@@ -233,11 +238,15 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
 
     // -------- PERICIAS --------
     periciasPorAtributo(state) {
+      const mapaIdParaNome = Object.fromEntries(
+        state.opcoes.atributos_base.map(attr => [attr.id, attr.nome])
+      );
+
       return state.opcoes.pericias.reduce((acc, p) => {
-        const attr = p.atributo_base
-        if (!acc[attr]) acc[attr] = []
-        acc[attr].push(p)
-        return acc
+        const nomeAttr = mapaIdParaNome[p.atributo_base_id] || 'Desconhecido';
+        if (!acc[nomeAttr]) acc[nomeAttr] = [];
+        acc[nomeAttr].push(p);
+        return acc;
       }, {} as Record<string, Pericia[]>)
     },
 
@@ -260,19 +269,22 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
 
       return somas
     },
+    
   },
 
   actions: {
     async buscarOpcoesIniciais() {
       try {
-        const [classes, racas, pericias] = await Promise.all([
-          useApi<Classe[]>('/recursos/classes'),
+        const [classes, racas, pericias, atributos_base] = await Promise.all([
+          useApi<Classe[]>('/classes/ListaClasses'),
           useApi<RacaPrincipal[]>('/recursos/racas'),
           useApi<Pericia[]>('/recursos/pericias'),
+          useApi<AtributoBase[]>('/recursos/atributosBase'),
         ])
-        this.opcoes.classes = classes
-        this.opcoes.racas = racas
-        this.opcoes.pericias = pericias
+        this.opcoes.classes = classes;
+        this.opcoes.racas = racas;
+        this.opcoes.pericias = pericias;
+        this.opcoes.atributos_base = atributos_base;
         this.inicializarPericias()
       } catch (err) {
         console.error('Falha ao buscar opções iniciais:', err)
@@ -281,20 +293,19 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
 
     async carregarDadosClasse(classeId: number) {
       try {
-        const { proficiencias, habilidades } = await useApi<any>(`/recursos/classes/${classeId}`);
+        const { proficiencias, habilidades } = await useApi<any>(`/classes/detalhes/${classeId}`);
 
         // ✅ Proficiencias
         this.proficiencias = (proficiencias || []) as Proficiencia[];
 
         // ✅ Habilidades
         this.habilidades.passivas = (habilidades || []).filter(
-          (h: Habilidade) => h.habilidade.tipo === 'passiva',
-        ).filter((h: Habilidade) => h.nivel_adquirido == 1);
+          (h: Habilidade) => h.tipo === 'passiva' && h.nivel_adquirido == 1
+        );
 
         this.habilidades.ativas = (habilidades || []).filter(
-          (h: Habilidade) => h.habilidade.tipo === 'ativa',
-        ).filter((h: Habilidade) => h.nivel_adquirido == 1);
-
+          (h: Habilidade) => h.tipo === 'ativa' && h.nivel_adquirido == 1
+        );
 
       } catch (err) {
         console.error('Erro ao carregar dados da classe:', err);
@@ -348,8 +359,7 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
             (this.personagem as any)[chave] / pericias.length,
           )
 
-          if (!this.personagem?.pericias?.[nome]) this.personagem.pericias = this.personagem.pericias || {};
-          this.personagem.pericias[nome] = this.personagem.pericias[nome] || {};
+          this.personagem.pericias[nome] ??= {};
 
           pericias.forEach(p => {
             if (this.personagem.pericias[nome][p.nome] === undefined) {
@@ -365,15 +375,16 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
         nome: '',
         classe_id: null,
         raca_id: null,
-        forca: 30,
-        destreza: 30,
-        constituicao: 30,
-        inteligencia: 30,
-        carisma: 30,
+        forca: 40,
+        destreza: 40,
+        constituicao: 40,
+        inteligencia: 40,
+        carisma: 40,
         sorte: 0,
         pericias: {},
         escolhas_raciais: {},
         habilidades_ativas: {},
+        habilidades_passivas: {},
         personagemCriadoId: null,
         nivel: 1,
       }
@@ -381,5 +392,50 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
       this.proficiencias = []
       this.habilidades = { passivas: [], ativas: [] }
     },
+
+    async buscaPreviaPersonagem() {
+      try {
+        const escolhas_raciais = [this.personagem.escolhas_raciais[1] || '', this.personagem.escolhas_raciais[2] || '']
+        console.log("Escolhas raciais: ", escolhas_raciais);
+        const personagem = await useApi('/personagens/previa', 'GET', null, {
+          nome: this.personagem.nome,
+          nivel: this.personagem.nivel,
+          forca: this.personagem.forca,
+          destreza: this.personagem.destreza,
+          constituicao: this.personagem.constituicao,
+          inteligencia: this.personagem.inteligencia,
+          carisma: this.personagem.carisma,
+          sorte: this.personagem.sorte,
+          escolhas_raciais: escolhas_raciais,
+          classe_id: this.personagem.classe_id,
+          subraca_id: this.personagem.raca_id,
+          habilidade_id: this.habilidadeSelecionada?.id ?? null
+        });
+      }
+      catch (err) {
+        console.error('Erro ao buscar prévia de personagem:', err);
+      }
+    },
+
+
+    imprimeTudo() {
+      return null
+      console.log('Imprime Tudo: personagem: ', this.personagem);
+      console.log('Imprime Tudo: opcoes: ', this.opcoes);
+      console.log('Imprime Tudo: racaPrincipalSelecionadaId: ', this.racaPrincipalSelecionadaId);
+      console.log('Imprime Tudo: proficiencias: ', this.proficiencias);
+      console.log('Imprime Tudo: habilidades: ', this.habilidades);
+      console.log('Imprime Tudo: Habilidade selecionada: ', this.habilidadeSelecionada);
+      console.log('Imprime Tudo: Personagem criado ID: ', this.personagemCriadoId);
+      console.log('Imprime Tudo: Loading Submit: ', this.loadingSubmit);
+      console.log('Imprime Tudo: Submit Error: ', this.submitError);
+      console.log('Imprime Tudo: classe: ', this.classe);
+      console.log('Imprime Tudo: opcoesSubRacas: ', this.opcoesSubRaca);
+      console.log('Imprime Tudo: Modificadores de escolha: ', this.modificadoresDeEscolha);
+      console.log('Imprime Tudo: pontosDeAtributoRestantes: ', this.bonusDeAtributosRaciais);
+      console.log('Imprime Tudo: atributosFinais: ', this.atributosFinais);
+      console.log('Imprime Tudo: periciasPorAtributo: ', this.periciasPorAtributo);
+      console.log('Imprime Tudo: somaPericias: ', this.somaPericias);
+    }
   },
 })
