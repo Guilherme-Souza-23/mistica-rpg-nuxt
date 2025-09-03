@@ -69,85 +69,71 @@
           <!-- COLUNA DIREITA: EQUIPAMENTOS (SELECTS EDITÁVEIS) + PAINÉIS SOMENTE LEITURA -->
           <div class="col-span-7 md:col-span-7 flex flex-col gap-4">
 
-            <!-- Seleção de Armas -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <!-- Arma 1 -->
-              <div>
-                <label class="block text-sm font-bold mb-1">Arma 1</label>
-                <select v-model="arma1Id" class="w-full border rounded p-2">
-                  <option :value="''" disabled>Selecione...</option>
-                  <option v-for="arma in armas1" :key="arma.id" :value="arma.id">
-                    {{ arma.quantidade }} x {{ arma.item_base.nome }}
-                  </option>
-                </select>
-                <div class="mt-2 p-3 border rounded bg-gray-50 text-sm min-h-[88px]">
-                  <template v-if="arma1?.item_base">
-                    <p v-for="prop in propriedadesArma1" :key="prop.label">
-                      <strong>{{ prop.label }}:</strong> {{ prop.value }}
-                    </p>
-                  </template>
+                <!-- Habilidades (PARTE 3)-->
+          <div v-if="habilidades.passivas.length > 0 || habilidades.ativas.length > 0" class="mt-6">
+            <h3 class="text-xl font-bold mb-2 border-b pb-2">Habilidades da Classe</h3>
 
-                  <template v-else>
-                    <p class="text-gray-500">Selecione uma arma para ver os atributos.</p>
-                  </template>
-                </div>
-              </div>
-
-              <!-- Arma 2 -->
-              <div>
-                <label class="block text-sm font-bold mb-1">Arma 2</label>
-                <select v-model="arma2Id" class="w-full border rounded p-2">
-                  <option :value="''" disabled>Selecione...</option>
-                  <option v-for="arma in armas2" :key="'a2-' + arma.id" :value="arma.id">
-                    {{ arma.quantidade }} x {{ arma.item_base.nome }}
-                  </option>
-                </select>
-                <div class="mt-2 p-3 border rounded bg-gray-50 text-sm min-h-[88px]">
-                  <template v-if="arma2?.item_base">
-                    <p v-for="prop in propriedadesArma2" :key="prop.label">
-                      <strong>{{ prop.label }}:</strong> {{ prop.value }}
-                    </p>
-                  </template>
-
-                  <template v-else>
-                    <p class="text-gray-500">Selecione uma arma para ver os atributos.</p>
-                  </template>
-                </div>
-              </div>
+            <!-- Passivas -->
+            <div v-if="habilidades.passivas.length > 0" class="mb-4">
+              <h4 class="font-semibold mb-2">Passivas</h4>
+              <ul class="pl-2">
+                <li
+                  v-for="hab in habilidades.passivas"
+                  :key="hab.id"
+                  class="flex items-center space-x-2 mb-2"
+                >
+                  <label class="cursor-pointer">
+                    <strong>{{ hab.nome }}</strong>: {{ hab.descricao }}
+                  </label>
+                </li>
+              </ul>
             </div>
 
-            <!-- Seleção de Armadura -->
-            <div>
-              <label class="block text-sm font-bold mb-1">Armadura</label>
-              <select v-model="armaduraId" class="w-full border rounded p-2">
-                <option :value="''" disabled>Selecione...</option>
-                <option v-for="arm in armaduras" :key="arm.id" :value="arm.id">
-                  {{ arm.item_base.nome }}
-                </option>
-              </select>
-              <div class="mt-2 p-3 border rounded bg-gray-50 text-sm min-h-[88px]">
-                <template v-if="armadura">
-                  <p v-for="prop in propriedadesArmadura" :key="prop.label">
-                    <strong>{{ prop.label }}:</strong> {{ prop.value }}
+            <!-- Ativas -->
+            <div v-if="habilidades.ativas.length > 0">
+              <h4 class="font-semibold mb-2">Ativas</h4>
+              <h5 class="italic">Nível 1</h5>
+
+              <div class="grid grid-cols-2 gap-4">
+                <!-- Coluna 1: Select -->
+                <div>
+                  <select
+                    v-model="habilidadeSelecionadaLocal"
+                    @change="selecionarHabilidade(habilidades.ativas.find(h => h.nome === habilidadeSelecionadaLocal))"
+                    class="border rounded p-2 w-full"
+                  >
+                    <option v-for="hab in habilidades.ativas" :key="hab.id" :value="hab.nome">
+                      {{ hab.nome }}
+                    </option>
+                  </select>
+                </div>
+                
+                <!-- Coluna 2: Descrição -->
+                <div class="border rounded p-4 bg-gray-50">
+                  <p v-if="store.habilidadeSelecionada">
+                    <strong>{{ store.habilidadeSelecionada.nome }}</strong><br />
+                    {{ store.habilidadeSelecionada.descricao }}
                   </p>
-                </template>
-                <template v-else>
-                  <p class="text-gray-500">Selecione uma armadura para ver os atributos.</p>
-                </template>
-              </div>
-            </div>
-
-
-            <!-- Atributos Secundários (somente exibição) -->
-            <div class="bg-white p-4 shadow rounded-lg">
-              <h3 class="text-xl font-bold mb-3">Atributos Secundários</h3>
-              <div class="flex flex-wrap gap-3">
-                <div class="secondary-stat-box" v-for="stat in secundarios" :key="stat.label">
-                  <span class="stat-label">{{ stat.label }}</span>
-                  <span class="stat-value-main">{{ stat.value }}</span>
+                  <p v-else class="text-gray-500 italic">
+                    Selecione uma habilidade para ver a descrição
+                  </p>
                 </div>
               </div>
             </div>
+          </div>
+
+
+                <!-- Atributos Secundários (somente exibição) -->
+                <div class="bg-white p-4 shadow rounded-lg">
+                  <h3 class="text-xl font-bold mb-3">Atributos Secundários</h3>
+                  <div class="flex flex-wrap gap-3">
+                    <div class="secondary-stat-box" v-for="stat in (secundarios as any)" :key="stat.nome_atributo">
+                      <span class="stat-label">{{ stat.nome_atributo }}</span>
+                      <span class="stat-value-main">{{ stat.valor_atributo }}</span>
+                    </div>
+                  </div>
+                </div>
+                
 
             <!-- BARRA DE AÇÕES (AVANÇAR / RECUAR) -->
             <div class="sticky bottom-0 bg-white border-t rounded-b-lg mt-2 py-3 px-2 flex justify-between items-center">
@@ -187,9 +173,16 @@ import { useApi } from '~/composables/useApi';
 import { storeToRefs } from 'pinia'
 import { useCriacaoPersonagemStore } from '~/stores/criacaoPersonagem'
 
-const store = useCriacaoPersonagemStore()
+
+const store = useCriacaoPersonagemStore();
+
+// Usamos storeToRefs para pegar as propriedades mantendo a reatividade
+const { personagem,} = storeToRefs(store);
+
 const router = useRouter()
-const { loadingSubmit, submitError, successMessage } = storeToRefs(store)
+const { loadingSubmit, submitError, successMessage, habilidades  } = storeToRefs(store)
+const habilidadeSelecionadaLocal = ref<any>(null);
+const secundarios = ref<{ nome_atributo: string; valor_atributo: any }[]>([]);
 
 const atributosBase = ref([
   { nome: 'Força', chave: 'forca' },
@@ -197,95 +190,7 @@ const atributosBase = ref([
   { nome: 'Constituição', chave: 'constituicao' },
   { nome: 'Inteligência', chave: 'inteligencia' },
   { nome: 'Carisma', chave: 'carisma' }
-])
-
-// Opções de equipamentos
-const armas1 = ref<any[]>([])
-const armas2 = ref<any[]>([])
-const armaduras = ref<any[]>([])
-const resposta = ref<any[]>([])
-const propriedadesArma1 = computed(() => mapearPropriedades(arma1.value))
-const propriedadesArma2 = computed(() => mapearPropriedades(arma2.value))
-const propriedadesArmadura = computed(() => mapearPropriedades(armadura.value))
-
-// Seleções (ids)
-const arma1Id = ref<string | number | ''>('')
-const arma2Id = ref<string | number | ''>('')
-const armaduraId = ref<string | number | ''>('')
-
-// Objetos selecionados (para exibição)
-const arma1 = computed(() => armas1.value.find(a => a.id === arma1Id.value))
-const arma2 = computed(() => armas2.value.find(a => a.id === arma2Id.value))
-const armadura = computed(() => armaduras.value.find(a => a.id === armaduraId.value))
-
-
-function mapearPropriedades(arma: any) {
-  if (!arma?.item_base) {
-    return [];
-  }
-
-
-  const item = arma.item_base;
-  const propriedades: { label: string; value: any }[] = [];
-  propriedades.push({ label: 'Nome', value: item.nome }); 
-
-  // --- Propriedades Comuns ---
-  if (item.peso > 0) {
-    propriedades.push({ label: 'Peso', value: item.peso });
-  }
-
-  // --- Arma Corpo-a-Corpo ---
-  if (item.propriedades_arma_cac) {
-    const props = item.propriedades_arma_cac;
-    if (props.dano) propriedades.push({ label: 'Dano', value: props.dano + ' de dano ' + props.tipo_dano });
-    if (props.alcance) propriedades.push({ label: 'Alcance', value: props.alcance });
-    if (props.categoria_peso) propriedades.push({ label: 'Categoria de Peso', value: props.categoria_peso });
-    if (props.tempo_ataque) propriedades.push({ label: 'Tempo de Ataque', value: props.tempo_ataque });
-    if (props.arremesso) propriedades.push({ label: 'Arremesso', value: props.arremesso });
-    if (props.versatil) propriedades.push({ label: 'Versátil', value: props.versatil });
-    if (props.atributo_ataque) propriedades.push({ label: 'Atributo de Ataque', value: props.atributo_ataque });
-
-    if (props.aparar) propriedades.push({ label: 'Possui', value: 'Aparar' });
-    if (props.duas_maos) propriedades.push({ label: 'Possui', value: 'Duas Mãos' });
-    if (props.fortitude) propriedades.push({ label: 'Possui', value: 'Fortitude' });
-    if (props.destruidor) propriedades.push({ label: 'Possui', value: 'Destruidor' });
-    if (props.multi_ataque) propriedades.push({ label: 'Possui', value: 'Multi-Ataque' });
-  }
-
-  // --- Arma a distância ---
-  if (item.propriedades_arma_distancia) {
-    const props = item.propriedades_arma_distancia
-    if (props.dano) propriedades.push({ label: 'Dano', value: props.dano + ' de dano ' + props.tipo_dano });
-    if (props.alcance_min && props.alcance_max) propriedades.push({ label: 'Alcance', value: (props.alcance_min) + 'm/' + (props.alcance_max) + 'm' });
-    if (props.familia_distancia) propriedades.push({ label: 'Tipo', value: props.familia_distancia });
-    if (props.tipo_municao) propriedades.push({ label: 'Tipo de munição', value: props.tipo_municao });
-    if (props.qtde_municao) propriedades.push({ label: 'Quantidade munição', value: props.qtde_municao });
-    if (props.tempo_recarga) propriedades.push({ label: 'Versátil', value: props.tempo_recarga });
-    if (props.atributo_ataque) propriedades.push({ label: 'Atributo de Ataque', value: props.atributo_ataque });
-
-    if (props.leve) propriedades.push({ label: 'Categoria de Peso', value: 'Leve' });
-    if (props.destruidor) propriedades.push({ label: 'Possui', value: 'Destruidor' });
-    if (props.multi_ataque) propriedades.push({ label: 'Possui', value: 'Multi-Ataque' });
-  }
-
-  // --- Armaduras ---
-  if (item.propriedades_armadura) {
-    const props = item.propriedades_armadura;
-    if (props.defesa) propriedades.push({ label: 'Defesa Física', value: ('+' + props.defesa )});
-    if (props.defesa_magica) propriedades.push({ label: 'Defesa Mágica', value: props.defesa_magica });
-    if (props.furtividade_resistencia) propriedades.push({ label: 'Penalidade de Furtividade e Esquiva', value: props.furtividade_resistencia});
-  }
-
-  // --- Escudos ---
-  if (item.propriedades_escudo) {
-    const props = item.propriedades_escudo
-    if (props.foco_conjurador) propriedades.push({ label: 'Tipo de Foco', value: props.foco_conjurador })
-    if (props.magica_intrinsica) propriedades.push({ label: 'Magia Intrinsica', value: props.magica_intrinsica })
-  }
-
-  return propriedades
-}
-
+]);
 
 onMounted(async () => {
   // Se usuário recarregar direto a etapa 3
@@ -294,30 +199,26 @@ onMounted(async () => {
   }
 
   if(store.personagem.classe_id){
-    await store.buscaPreviaPersonagem();
-  }
-
-  // Buscar equipamentos iniciais por classe
-  if (store.personagem.classe_id) {
-    const resposta: any = await useApi(`/classes/equipamentosIniciais/${store.personagem.classe_id}`);
-    // Assumindo que a API retorna algo como { armas: [...], armaduras: [...] }
-
-    for (const item of resposta.value) {
-      if (item.grupo_escolha === 1) {
-        armas1.value.push(item);
-      } else if (item.grupo_escolha === 2) {
-        armas2.value.push(item);
-      } else if (item.grupo_escolha === 3) {
-        armaduras.value.push(item);
-      }
+    try{
+      const previa = await store.buscaPreviaPersonagem();
+      secundarios.value = Object.entries(previa).map(([key, value]) => ({
+        nome_atributo: key,
+        valor_atributo: value,
+      }));
+      console.log("Secundarios: ", secundarios.value);
+    } catch(e){
+      console.error(e);
     }
   }
 })
 
-// Persistir escolhas no store (ids) para o submit final
-watch([arma1Id, arma2Id, armaduraId], ([a1, a2, ar]) => {
-  ;(store.personagem as any).equipamentos = { arma1Id: a1 || null, arma2Id: a2 || null, armaduraId: ar || null }
-})
+async function selecionarHabilidade(hab: any) {
+  store.habilidadeSelecionada = hab;
+  console.log("Habilidade selecionada 2: ", store.habilidadeSelecionada);
+  habilidadeSelecionadaLocal.value = hab.nome;
+  
+}
+
 
 // ======== Cálculos auxiliares ========
 function modAtributo(valor: number) {
@@ -328,38 +229,7 @@ function getValorPericia(nomeAtributo: string, nomePericia: string) {
   return ((store.personagem.pericias as any)?.[nomeAtributo]?.[nomePericia]) ?? 0
 }
 
-// Atributos secundários (apenas exibição). Ajuste as fórmulas às regras do sistema.
-const secundarios = computed(() => {
-  const at = store.atributosFinais as any;
-  const modInt = modAtributo(at.inteligencia);
-  const modCon = modAtributo(at.constituicao);
-  const modDes = modAtributo(at.destreza);
 
-  
-  const atributosSecundarios: { label: string; value: any }[] = [];
-
-  // Esquiva = máx(Reagir, 10)
-  const reagir = (getValorPericia('Destreza', 'Reagir') || 0) - 10;
-  const penalidadeEsquiva = armadura.value?.item_base?.propriedades_armadura?.furtividade_resistencia ?? 0;
-  const esquivaBase = (10 + reagir);
-
-
-  const defesaFisica = armadura.value?.item_base?.propriedades_armadura?.defesa ?? 0;
-  const defesaMagica = armadura.value?.item_base?.propriedades_armadura?.defesa_magica ?? 0;
-
-  atributosSecundarios.push(
-    { label: 'Vida', value:  `${20 + Math.floor(at.constituicao / 4) - 10}` },
-    { label: 'Pontos de Fôlego', value:  `${Math.floor(at.constituicao / 4)}` },
-    { label: 'Esquiva', value: `${(esquivaBase + penalidadeEsquiva)}` },
-    { label: 'Percepção', value: `${13 + modInt}` },
-    { label: 'Tenacidade', value: `${Math.floor(modCon / 2)}` },
-    { label: 'Defesa Física', value: `${Math.floor(modCon / 2) + defesaFisica}` },
-    { label: 'Resistência Mágica', value: `${Math.floor((modCon + modInt) / 2) + defesaMagica}` },
-    { label: 'Velocidade', value: `${Math.max(3, 5 + Math.floor(modDes / 2))}m` },
-  );
-
-  return atributosSecundarios;
-})
 
 // Validação de distribuição (diferença máx 1 entre valores)
 function validaPericias(attr: any): string {

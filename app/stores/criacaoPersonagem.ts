@@ -41,6 +41,17 @@ interface Pericia {
   nome: string
   atributo_base_id: number
 }
+interface AtributosSecundarios {
+  carga: number,
+  jogadasSorte: number,
+  velocidade: number,
+  percepcao: number,
+  vidaMaxima: number,
+  recurso: number,
+  tenacidade: number,
+  defesa: number,
+  defesaMagica: number,
+}
 interface Habilidade {
   id: number
   nome: string
@@ -48,7 +59,6 @@ interface Habilidade {
   descricao: string,
   nivel_adquirido: number
 }
-
 interface ItemBase {
   id: number
   nome: string
@@ -57,11 +67,11 @@ interface ItemBase {
     nome: string
   }
 }
-
 interface Proficiencia {
   id: number
   item_base: ItemBase
 }
+
 
 export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
   state: () => ({
@@ -74,13 +84,20 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
       constituicao: 40,
       inteligencia: 40,
       carisma: 40,
-      sorte: 0, // tratado separadamente
+      sorte: 0,
       pericias: {} as Record<string, Record<string, number>>,
       escolhas_raciais: {} as Record<string, string>,
-      habilidades_ativas: {} as Record<number, number>, // <nivel, id da habilidade>
+      habilidades_ativas: {} as Record<number, number>, 
       habilidades_passivas: {} as Record<number, number>,
       personagemCriadoId: null as number | null,
       nivel: 1,
+      equipamentos: {
+        arma1_id: null as number | null,
+        arma2_id: null as number | null,
+        armadura_id: null as number | null,
+      },
+      previaSecundarios: {} as AtributosSecundarios,
+      atributosSecundarios: {} as AtributosSecundarios
     },
     opcoes: {
       racas: [] as RacaPrincipal[],
@@ -115,16 +132,19 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
     },
 
     isEtapa2Valida(state): boolean {
-      const pontosOk = this.pontosDeAtributoRestantes === 0
-      const gruposNecessarios = this.modificadoresDeEscolha.length
-      const gruposEscolhidos = Object.keys(state.personagem.escolhas_raciais).length
+      // 1. Valida se os pontos de atributo foram distribuídos corretamente
+      const pontosOk = this.pontosDeAtributoRestantes === 0;
+      console.log("Pontos de Atributo Restantes: ", pontosOk);
 
-      // Habilidades ativas: todas as que possuem opções devem ter uma escolhida
-      if(!this.habilidadeSelecionada){
-        return false;
-      }
+      // 2. Valida se todas as escolhas de bônus raciais foram feitas
+      const gruposRaciaisNecessarios = this.modificadoresDeEscolha.length;
+      const gruposRaciaisEscolhidos = Object.values(state.personagem.escolhas_raciais).filter(v => v).length;
+      const escolhasRaciaisOk = gruposRaciaisNecessarios === gruposRaciaisEscolhidos;
+      console.log("Escolhas Raciais: ", escolhasRaciaisOk);
 
-      return pontosOk && gruposNecessarios === gruposEscolhidos
+
+      // Retorna true apenas se TODAS as condições forem satisfeitas
+      return pontosOk && escolhasRaciaisOk;
     },
 
     isEtapa3Valida(state): boolean {
@@ -139,13 +159,13 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
       }
 
       for (const nomeVisivel of Object.keys(mapa)) {
-        const chave = mapa[nomeVisivel]
-        const pericias = Object.values(state.personagem.pericias[nomeVisivel] || {}) as number[]
+        const chave = mapa[nomeVisivel] ?? '';
+        const pericias = Object.values(state.personagem.pericias[nomeVisivel] || {}) as number[];
 
-        if (pericias.length < 4) return false
+        if (pericias.length < 4) return false;
 
-        const soma = pericias.reduce((s, v) => s + v, 0)
-        if (soma !== this.atributosFinais[chave]) return false
+        const soma = pericias.reduce((s, v) => s + v, 0);
+        if (soma !== this.atributosFinais[chave]) return false;
       }
 
       return true
@@ -171,7 +191,7 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
       todos.forEach(mod => {
         if (mod.tipo === 'bonus_atributo_escolha' && mod.grupo_escolha) {
           if (!grupos[mod.grupo_escolha]) grupos[mod.grupo_escolha] = []
-          grupos[mod.grupo_escolha].push(mod)
+          grupos[mod.grupo_escolha]?.push(mod)
         }
       })
 
@@ -192,18 +212,18 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
       // Fixos
       todos.forEach(mod => {
         if (mod.tipo === 'bonus_atributo') {
-          const valor = parseInt(mod.valor.replace('+', ''))
-          bonus[mod.chave] = (bonus[mod.chave] || 0) + valor
+          const valor = parseInt(mod.valor.replace('+', ''));
+          bonus[mod.chave] = (bonus[mod.chave] || 0) + valor;
         }
       })
 
       // Escolha
       for (const grupo in state.personagem.escolhas_raciais) {
-        const chave = state.personagem.escolhas_raciais[grupo]
-        const escolhido = todos.find(m => m.grupo_escolha == parseInt(grupo) && m.chave === chave)
+        const chave = state.personagem.escolhas_raciais[grupo] ?? '';
+        const escolhido = todos.find(m => m.grupo_escolha == parseInt(grupo) && m.chave === chave);
         if (escolhido) {
-          const valor = parseInt(escolhido.valor.replace('+', ''))
-          bonus[chave] = (bonus[chave] || 0) + valor
+          const valor = parseInt(escolhido.valor.replace('+', ''));
+          bonus[chave] = (bonus[chave] || 0) + valor;
         }
       }
 
@@ -341,7 +361,7 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
       }
     },
 
-    inicializarPericias() {
+    inicializarPericias() : void {
       const mapa: Record<string, string> = {
         'Força': 'forca',
         'Destreza': 'destreza',
@@ -351,21 +371,22 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
       }
 
       for (const nome in mapa) {
-        const chave = mapa[nome]
+        const chave = mapa[nome] ?? '';
         const pericias = this.periciasPorAtributo[nome] || []
 
         if (pericias.length > 0) {
           const valorBase = Math.floor(
             (this.personagem as any)[chave] / pericias.length,
-          )
+          );
 
           this.personagem.pericias[nome] ??= {};
 
           pericias.forEach(p => {
-            if (this.personagem.pericias[nome][p.nome] === undefined) {
-              this.personagem.pericias[nome][p.nome] = valorBase
+            const periciasNome = this.personagem.pericias[nome] ?? {};
+            if (periciasNome[p.nome] === undefined) {
+              periciasNome[p.nome] = valorBase;
             }
-          })
+          });
         }
       }
     },
@@ -386,18 +407,24 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
         habilidades_ativas: {},
         habilidades_passivas: {},
         personagemCriadoId: null,
+        equipamentos: {
+          arma1_id: null,
+          arma2_id: null,
+          armadura_id: null,
+        },
         nivel: 1,
+        previaSecundarios: {} as AtributosSecundarios,
+        atributosSecundarios: {} as AtributosSecundarios
       }
       this.racaPrincipalSelecionadaId = null
       this.proficiencias = []
-      this.habilidades = { passivas: [], ativas: [] }
+      this.habilidades = { passivas: [] as Habilidade[], ativas: [] as Habilidade[] }
     },
 
     async buscaPreviaPersonagem() {
       try {
         const escolhas_raciais = [this.personagem.escolhas_raciais[1] || '', this.personagem.escolhas_raciais[2] || '']
-        console.log("Escolhas raciais: ", escolhas_raciais);
-        const personagem = await useApi('/personagens/previa', 'GET', null, {
+        const previa: any = await useApi('/personagens/previa', 'GET', null, {
           nome: this.personagem.nome,
           nivel: this.personagem.nivel,
           forca: this.personagem.forca,
@@ -406,12 +433,28 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
           inteligencia: this.personagem.inteligencia,
           carisma: this.personagem.carisma,
           sorte: this.personagem.sorte,
-          escolhas_raciais: escolhas_raciais,
           classe_id: this.personagem.classe_id,
           subraca_id: this.personagem.raca_id,
-          habilidade_id: this.habilidadeSelecionada?.id ?? null
+          habilidades_id: [this.habilidadeSelecionada?.id ?? null],
+          escolhas_raciais: escolhas_raciais ?? [],
         });
-      }
+
+        // Atualiza os atributos secundarios previos do personagem
+        if(previa) {
+          this.personagem.previaSecundarios.carga = previa.carga ?? 10;
+          this.personagem.previaSecundarios.jogadasSorte = previa.jogadasSorte ?? 0;
+          this.personagem.previaSecundarios.velocidade = previa.velocidade ?? 5;
+          this.personagem.previaSecundarios.percepcao = previa.percepcao ?? 13;
+          this.personagem.previaSecundarios.vidaMaxima = previa.vidaMaxima ?? 20;
+          this.personagem.previaSecundarios.recurso = previa.recurso ?? 5;
+          this.personagem.previaSecundarios.tenacidade = previa.tenacidade ?? 0;
+          this.personagem.previaSecundarios.defesa = previa.defesa ?? 0;
+          this.personagem.previaSecundarios.defesaMagica = previa.defesaMagica ?? 0;
+        }
+
+        console.log("Personagem Previa: ", this.personagem.previaSecundarios);
+        return previa;
+      } 
       catch (err) {
         console.error('Erro ao buscar prévia de personagem:', err);
       }
