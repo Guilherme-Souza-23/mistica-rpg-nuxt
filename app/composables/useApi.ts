@@ -10,7 +10,8 @@ interface ApiResponse<T> {
 export const useApi = async <T>(
   endpoint: string,
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET',
-  body?: unknown
+  body?: unknown,
+  params?: Record<string, any>
 ): Promise<T> => {
   try {
     // Usa o apiClient para fazer a requisição
@@ -18,6 +19,7 @@ export const useApi = async <T>(
       method,
       url: endpoint,
       data: body,
+      params,
     });
 
     if (response.data.success) {

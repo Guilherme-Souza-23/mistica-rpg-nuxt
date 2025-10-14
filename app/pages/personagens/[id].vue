@@ -1,7 +1,7 @@
 <template>
   <div class="container mx-auto p-4">
     <div v-if="estaCarregando" class="text-center p-8">Carregando ficha...</div>
-    <div v-else-if="error" class="error-message">Erro ao carregar personagem.</div>
+    <div v-else-if="error" class="error-message">{{ error.message }}</div>
 
     <div v-else-if="personagem" class="character-sheet bg-white rounded-lg shadow-lg p-4 max-w-4xl mx-auto">
       
@@ -111,7 +111,7 @@
             </div>
           </div>
         </div>
-        
+        <!--
         <div class="stat-box col-span-1">
             <h3 class="text-xl font-bold mb-2">Inventário</h3>
             <ul v-if="personagem.inventario_itens && personagem.inventario_itens.length > 0" class="inventory-list">
@@ -122,6 +122,7 @@
             </ul>
             <p v-else class="text-sm italic">Inventário vazio.</p>
         </div>
+        -->
       </div>
     </div>
   </div>
@@ -134,7 +135,7 @@
   const route = useRoute();
   const personagem = ref<any>(null); // Para guardar os dados do personagem
   const estaCarregando = ref(true);     // Nossa própria variável para o estado de "carregando"
-  const error = ref<string | null>(null);     // Nossa própria variável para o estado de erro
+  const error = ref<Error | null>(null);    // Nossa própria variável para o estado de erro
 
   // Usamos onMounted para chamar a API assim que o componente é carregado na tela
   const periciasAgrupadas = computed(() => {
@@ -150,7 +151,7 @@
     };
 
     // O método reduce transforma o array de perícias em um objeto agrupado
-    return personagem.value.pericias.reduce((acc, itemPericia) => {
+    return personagem.value.pericias.reduce((acc: { [key: string]: any }, itemPericia: { pericia: { atributo_base: any; nome: any; }; valor: number; }) => {
       const atributoNomeExibicao = itemPericia.pericia.atributo_base;
       const atributoChave = slugify(atributoNomeExibicao);
       const periciaInfo = {
@@ -179,13 +180,12 @@
   onMounted(async () => {
     try {
       const personagemId = route.params.id;
-      personagem.value = await useApi(`/personagens/${personagemId}`);
+      personagem.value = await useApi(`/personagens/buscar/${personagemId}`);
+      console.log("Personagem carregado: ", personagem.value);
     } catch (err: any) {
-      error.value = err.message || 'Falha ao carregar o personagem.';
+      error.value = err instanceof Error ? err : new Error('Falha ao carregar o personagem.');
     } finally {
       estaCarregando.value = false;
-      console.log("Personagem carregado:", personagem.value);
-      console.log("Pericias agrupadas:", periciasAgrupadas.value);
     }
   });
 </script>

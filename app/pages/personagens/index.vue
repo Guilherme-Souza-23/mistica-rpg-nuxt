@@ -48,19 +48,25 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import apiClient from '~/services/api';
-import { useRoute } from 'vue-router';
 
-// Usamos useFetch para buscar os dados. Ele é ideal para SSR e gerencia os estados de loading/error.
-const { data: personagens, pending, error } = await useFetch(
-  () => '/personagens', {
-    baseURL: apiClient.defaults.baseURL,
-    // A resposta da nossa API tem os dados dentro de uma chave 'data',
-    // então usamos transform para já pegar esse valor diretamente.
-    transform: (response: any) => response.data,
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useApi } from '~/composables/useApi';
+
+const personagens = ref<any[]>([]);
+const pending = ref(true);
+const error = ref<Error | null>(null);
+
+onMounted(async () => {
+  try {
+    pending.value = true;
+    personagens.value = await useApi<any[]>('/personagens', 'GET');
+  } catch (err: any) {
+    error.value = err;
+  } finally {
+    pending.value = false;
   }
-);
+});
 </script>
 
 <style scoped>

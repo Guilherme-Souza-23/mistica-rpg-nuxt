@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url'
 export default defineNuxtConfig({
   devtools: { enabled: true },
 
+  compatibilityDate: '2025-09-11',
+
   // Adicionamos esta configuração para forçar a resolução do atalho '@'
   alias: {
     '@': fileURLToPath(new URL('./', import.meta.url))
@@ -15,7 +17,8 @@ export default defineNuxtConfig({
     '@/app/assets/css/main.css',
   ],
   modules: [
-    '@nuxtjs/tailwindcss' 
+    '@nuxtjs/tailwindcss',
+    '@pinia/nuxt',
   ],
 
   vite: {
