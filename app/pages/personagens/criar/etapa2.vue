@@ -135,7 +135,10 @@
         <!-- Arma 1 -->
         <div>
           <h4 class="block text-sm font-bold mb-1">Arma 1</h4>
-          <select v-model="personagem.equipamentos.arma1_id" class="w-full border rounded p-2">
+          <select
+           v-model="personagem.equipamentos[0].id"
+           @change="atualizarQuantidade(0, $event)" 
+           class="w-full border rounded p-2">
             <option :value="null" disabled>Selecione...</option>
             <option v-for="arma in armas1" :key="arma.item_base_id" :value="arma.item_base_id">
               {{ arma.quantidade }} x {{ arma.item_base.nome }}
@@ -154,7 +157,7 @@
         <!-- Arma 2 -->
         <div>
           <h4 class="block text-sm font-bold mb-1">Arma 2</h4>
-          <select v-model="personagem.equipamentos.arma2_id" class="w-full border rounded p-2">
+          <select v-model="personagem.equipamentos[1].id" class="w-full border rounded p-2" @change="atualizarQuantidade(1, $event)">
             <option :value="''" disabled>Selecione...</option>
             <option v-for="arma in armas2" :key="arma.item_base_id" :value="arma.item_base_id">
               {{ arma.quantidade }} x {{ arma.item_base.nome }}
@@ -178,7 +181,7 @@
       <!-- Seleção de Armadura (PARTE 4)-->
       <div class="mt-6">
         <h4 class="block text-sm font-bold mb-1">Armadura</h4>
-        <select v-model="personagem.equipamentos.armadura_id" class="w-full border rounded p-2">
+        <select v-model="personagem.equipamentos[2].id" class="w-full border rounded p-2">
           <option :value="''" disabled>Selecione...</option>
           <option v-for="arm in armaduras" :key="arm.item_base.id" :value="arm.item_base.id">
             {{ arm.item_base.nome }}
@@ -248,9 +251,16 @@ const armaduras = computed(() => equipamentosIniciais.value.filter(e => e.grupo_
 
 
 // --- PROPRIEDADES COMPUTADAS PARA ENCONTRAR O ITEM SELECIONADO NA STORE ---
-const arma1Selecionada = computed(() => equipamentosIniciais.value.find(e => e.item_base_id === personagem.value.equipamentos.arma1_id));
-const arma2Selecionada = computed(() => equipamentosIniciais.value.find(e => e.item_base_id === personagem.value.equipamentos.arma2_id));
-const armaduraSelecionada = computed(() => equipamentosIniciais.value.find(e => e.item_base_id === personagem.value.equipamentos.armadura_id));
+const arma1Selecionada = computed(() =>
+  equipamentosIniciais.value.find(e => e.item_base_id === personagem.value.equipamentos[0]?.id)
+);
+const arma2Selecionada = computed(() =>
+  equipamentosIniciais.value.find(e => e.item_base_id === personagem.value.equipamentos[1]?.id)
+);
+const armaduraSelecionada = computed(() =>
+  equipamentosIniciais.value.find(e => e.item_base_id === personagem.value.equipamentos[2]?.id)
+);
+
 
 // --- PROPRIEDADES COMPUTADAS PARA EXIBIR AS PROPRIEDADES ---
 const propriedadesArma1 = computed(() => mapearPropriedades(arma1Selecionada.value));
@@ -367,9 +377,31 @@ function clicou() {
   store.imprimeTudo();
 }
 
+function atualizarQuantidade(slotIndex: number, event: Event) {
+  const select = event.target as HTMLSelectElement
+  const id = Number(select.value)
+
+  const itemSelecionado = equipamentosIniciais.value.find(e => e.item_base_id === id)
+  if (itemSelecionado) {
+    personagem.value.equipamentos.splice(slotIndex, 1, {
+      id: itemSelecionado.item_base_id,
+      quantidade: itemSelecionado.quantidade
+    })
+  }
+}
 
 // onMounted: Carrega os dados da classe quando a página é montada
-onMounted(carregarDadosDaClasse);
+onMounted(async () => {
+  await carregarDadosDaClasse();
+  if (personagem.value.equipamentos.length === 0) {
+    personagem.value.equipamentos = [
+      { id: 0, quantidade: 1 }, // arma1
+      { id: 0, quantidade: 1 }, // arma2
+      { id: 0, quantidade: 1 }, // armadura
+    ]
+  }
+})
+
 watch(() => personagem.value.classe_id, carregarDadosDaClasse);
 
 

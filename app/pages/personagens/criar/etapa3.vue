@@ -48,8 +48,9 @@
                               type="number"
                               min="0"
                               class="w-14 text-center border rounded p-1"
-                              v-model.number="(store.personagem.pericias as any)[attr.nome][pericia.nome]"
+                              v-model.number="(store?.personagem.pericias as any)[attr.nome][pericia.nome]"
                             />
+                            
                           </td>
                           <td class="text-center">{{ ((store.personagem.pericias?.[attr.nome]?.[pericia.nome]) || 0) - 10 }}</td>
                         </tr>
@@ -205,7 +206,6 @@ onMounted(async () => {
         nome_atributo: key,
         valor_atributo: value,
       }));
-      console.log("Secundarios: ", secundarios.value);
     } catch(e){
       console.error(e);
     }
@@ -214,7 +214,6 @@ onMounted(async () => {
 
 async function selecionarHabilidade(hab: any) {
   store.habilidadeSelecionada = hab;
-  console.log("Habilidade selecionada 2: ", store.habilidadeSelecionada);
   habilidadeSelecionadaLocal.value = hab.nome;
   
 }
@@ -243,9 +242,9 @@ function validaPericias(attr: any): string {
 // Avançar (última etapa -> submete e vai para a página do personagem)
 async function avancar() {
   await store.submitPersonagem()
-  if (!store.submitError && store.personagemCriadoId) {
-    router.push(`/personagens/${store.personagemCriadoId}`)
-  }
+  //if (!store.submitError && store.personagemCriadoId) {
+  //  router.push(`/personagens/${store.personagemCriadoId}`)
+  //}
 }
 </script>
 

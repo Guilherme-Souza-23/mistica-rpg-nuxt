@@ -48,7 +48,6 @@ interface AtributosSecundarios {
   percepcao: number,
   vidaMaxima: number,
   recurso: number,
-  tenacidade: number,
   defesa: number,
   defesaMagica: number,
 }
@@ -72,6 +71,11 @@ interface Proficiencia {
   item_base: ItemBase
 }
 
+interface Equipamento {
+  id: number | null
+  quantidade: number
+}
+
 
 export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
   state: () => ({
@@ -87,15 +91,14 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
       sorte: 0,
       pericias: {} as Record<string, Record<string, number>>,
       escolhas_raciais: {} as Record<string, string>,
-      habilidades_ativas: {} as Record<number, number>, 
-      habilidades_passivas: {} as Record<number, number>,
+      habilidades_ativas: {} as number | null, 
       personagemCriadoId: null as number | null,
       nivel: 1,
-      equipamentos: {
-        arma1_id: null as number | null,
-        arma2_id: null as number | null,
-        armadura_id: null as number | null,
-      },
+      equipamentos: [
+        { id: null, quantidade: 1 } as Equipamento, // arma1
+        { id: null, quantidade: 1 } as Equipamento, // arma2
+        { id: null, quantidade: 1 } as Equipamento  // armadura
+      ] ,
       previaSecundarios: {} as AtributosSecundarios,
       atributosSecundarios: {} as AtributosSecundarios
     },
@@ -338,18 +341,18 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
       this.successMessage = null;
       this.personagemCriadoId = null;
 
-      try {
-        const atributosFinais = this.atributosFinais;
-        const payload = {
-          ...this.personagem,
-          ...atributosFinais,
-          nivel: this.personagem.nivel,
-          habilidades_ativas: this.personagem.habilidades_ativas,
-        }
+      this.preparaDadosPersonagem();
 
-        const response = await useApi<any>('/personagens', 'POST', payload)
-        this.successMessage = `Personagem "${response.nome}" criado com sucesso!`
-        this.personagemCriadoId = response.id
+      try {
+        this.personagem.habilidades_ativas = (this.habilidadeSelecionada?.id as number);
+        const payload = {
+          ...this.personagem
+        }
+        console.log("Payload: ", payload);
+
+        const response = await useApi<any>('/personagens', 'POST', payload);
+        //this.successMessage = `Personagem "${response.nome}" criado com sucesso!`
+        //this.personagemCriadoId = response.id
         this.resetarFormulario()
       } catch (err: any) {
         this.submitError =
@@ -392,30 +395,7 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
     },
 
     resetarFormulario() {
-      this.personagem = {
-        nome: '',
-        classe_id: null,
-        raca_id: null,
-        forca: 40,
-        destreza: 40,
-        constituicao: 40,
-        inteligencia: 40,
-        carisma: 40,
-        sorte: 0,
-        pericias: {},
-        escolhas_raciais: {},
-        habilidades_ativas: {},
-        habilidades_passivas: {},
-        personagemCriadoId: null,
-        equipamentos: {
-          arma1_id: null,
-          arma2_id: null,
-          armadura_id: null,
-        },
-        nivel: 1,
-        previaSecundarios: {} as AtributosSecundarios,
-        atributosSecundarios: {} as AtributosSecundarios
-      }
+      
       this.racaPrincipalSelecionadaId = null
       this.proficiencias = []
       this.habilidades = { passivas: [] as Habilidade[], ativas: [] as Habilidade[] }
@@ -434,22 +414,26 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
           carisma: this.personagem.carisma,
           sorte: this.personagem.sorte,
           classe_id: this.personagem.classe_id,
+          raca_id: this.racaPrincipalSelecionadaId,
           subraca_id: this.personagem.raca_id,
           habilidades_id: [this.habilidadeSelecionada?.id ?? null],
           escolhas_raciais: escolhas_raciais ?? [],
         });
 
+        const previaNormalizada = this.normalizarChaves(previa);
+
+        console.log("Personagem Previa 3: ", previaNormalizada);
+
         // Atualiza os atributos secundarios previos do personagem
         if(previa) {
-          this.personagem.previaSecundarios.carga = previa.carga ?? 10;
-          this.personagem.previaSecundarios.jogadasSorte = previa.jogadasSorte ?? 0;
-          this.personagem.previaSecundarios.velocidade = previa.velocidade ?? 5;
-          this.personagem.previaSecundarios.percepcao = previa.percepcao ?? 13;
-          this.personagem.previaSecundarios.vidaMaxima = previa.vidaMaxima ?? 20;
-          this.personagem.previaSecundarios.recurso = previa.recurso ?? 5;
-          this.personagem.previaSecundarios.tenacidade = previa.tenacidade ?? 0;
-          this.personagem.previaSecundarios.defesa = previa.defesa ?? 0;
-          this.personagem.previaSecundarios.defesaMagica = previa.defesaMagica ?? 0;
+          this.personagem.previaSecundarios.carga = previaNormalizada.carga ?? 10;
+          this.personagem.previaSecundarios.defesa = previaNormalizada.defesa_fisica ?? 0;
+          this.personagem.previaSecundarios.defesaMagica = previaNormalizada.defesa_magica ?? 0;
+          this.personagem.previaSecundarios.jogadasSorte = previaNormalizada.jogadas_de_sorte ?? 0;
+          this.personagem.previaSecundarios.percepcao = previaNormalizada.percepcao ?? 13;
+          this.personagem.previaSecundarios.recurso = previaNormalizada.pontos_de_folego ?? 5;
+          this.personagem.previaSecundarios.velocidade = previaNormalizada.velocidade ?? 5;
+          this.personagem.previaSecundarios.vidaMaxima = previaNormalizada.vidaMaxima ?? 20;
         }
 
         console.log("Personagem Previa: ", this.personagem.previaSecundarios);
@@ -479,6 +463,33 @@ export const useCriacaoPersonagemStore = defineStore('criacaoPersonagem', {
       console.log('Imprime Tudo: atributosFinais: ', this.atributosFinais);
       console.log('Imprime Tudo: periciasPorAtributo: ', this.periciasPorAtributo);
       console.log('Imprime Tudo: somaPericias: ', this.somaPericias);
+    },
+
+    preparaDadosPersonagem() {
+      this.personagem.forca = (this.atributosFinais.forca as number);
+      this.personagem.destreza = (this.atributosFinais.destreza as number);
+      this.personagem.constituicao = (this.atributosFinais.constituicao as number);
+      this.personagem.inteligencia = (this.atributosFinais.inteligencia as number);
+      this.personagem.carisma = (this.atributosFinais.carisma as number);
+      this.personagem.sorte = (this.atributosFinais.sorte as number);
+
+      this.resetarFormulario();
+
+      this.personagem.habilidades_ativas = (this.habilidadeSelecionada?.id as number);
+    },
+
+    normalizarChaves(obj: Record<string, any>) {
+      const semAcento = (str: string) =>
+        str.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // remove acentos
+
+      return Object.entries(obj).reduce((acc, [key, value]) => {
+        let chave = semAcento(key)         // tira acento
+          .toLowerCase()                   // deixa minúscula
+          .replace(/\s+/g, "_");           // troca espaço por "_"
+
+        acc[chave] = value;
+        return acc;
+      }, {} as Record<string, any>);
     }
   },
 })

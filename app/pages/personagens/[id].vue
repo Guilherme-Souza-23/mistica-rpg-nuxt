@@ -181,6 +181,7 @@
     try {
       const personagemId = route.params.id;
       personagem.value = await useApi(`/personagens/buscar/${personagemId}`);
+      console.log("Personagem carregado: ", personagem.value);
     } catch (err: any) {
       error.value = err instanceof Error ? err : new Error('Falha ao carregar o personagem.');
     } finally {
